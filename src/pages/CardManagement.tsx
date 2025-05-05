@@ -151,9 +151,7 @@ export default function CardManagement() {
             Add Card
           </Button>
         </Link>
-        //hahahah
-        //test
-        
+
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
