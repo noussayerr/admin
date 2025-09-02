@@ -15,6 +15,7 @@ import ApplyAccount from "./pages/ApplyAccount";
 import ApplyCredit from "./pages/ApplyCredit";
 import { Toaster } from "./components/ui/toaster";
 import { ToastProvider } from "./context/ToastContext";
+import ReclamationManagement from "./pages/reclamation-management";
 
 function App() {
   return (
@@ -39,7 +40,7 @@ function App() {
             //request management
             <Route path="requests" element={<RequestManagement />} />
             <Route path="notifications" element={<Notifications />} />
-            
+            <Route path="reclamation" element={<ReclamationManagement />} />
             
             
           </Route>

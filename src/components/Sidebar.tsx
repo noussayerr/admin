@@ -1,8 +1,7 @@
-"use client"
 
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "../lib/utils"
-import { CreditCard, Users, LayoutDashboard, BellRing, ClipboardCheck, Wallet, Landmark, X } from "lucide-react"
+import { CreditCard, Users, LayoutDashboard, BellRing, ClipboardCheck, Wallet, Landmark, X ,CircleAlert } from "lucide-react"
 import { Button } from "../components/ui/button"
 import { ScrollArea } from "../components/ui/scroll-area"
 import { Sheet, SheetContent } from "../components/ui/sheet"
@@ -51,6 +50,11 @@ export default function Sidebar({ open, onOpenChange }: SidebarProps) {
       title: "Notifications",
       href: "/notifications",
       icon: BellRing,
+    },
+    {
+      title: "reclamation",
+      href: "/reclamation",
+      icon: CircleAlert ,
     },
   ]
 

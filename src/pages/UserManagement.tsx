@@ -1,20 +1,9 @@
-"use client"
-
-import { useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Input } from "../components/ui/input"
-import { Button } from "../components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu"
+import { Filter, MoreHorizontal, Search } from "lucide-react"
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Badge } from "../components/ui/badge"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -23,107 +12,137 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/ui/dialog"
-import { Search, MoreHorizontal, Filter, UserPlus } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu"
+import { Input } from "../components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
 
-// Mock data for users
-const initialUsers = [
-  {
-    id: "1",
-    name: "Ahmed Ben Ali",
-    email: "ahmed.benali@example.com",
-    status: "active",
-    accountType: "Premium",
-    joinDate: "2023-01-15",
-    lastLogin: "2023-05-10",
-  },
-  {
-    id: "2",
-    name: "Sarra Mansour",
-    email: "sarra.mansour@example.com",
-    status: "active",
-    accountType: "Standard",
-    joinDate: "2023-02-20",
-    lastLogin: "2023-05-09",
-  },
-  {
-    id: "3",
-    name: "Mohamed Karim",
-    email: "mohamed.karim@example.com",
-    status: "inactive",
-    accountType: "Premium",
-    joinDate: "2023-03-05",
-    lastLogin: "2023-04-28",
-  },
-  {
-    id: "4",
-    name: "Leila Trabelsi",
-    email: "leila.trabelsi@example.com",
-    status: "active",
-    accountType: "Standard",
-    joinDate: "2023-03-15",
-    lastLogin: "2023-05-10",
-  },
-  {
-    id: "5",
-    name: "Kamel Gharbi",
-    email: "kamel.gharbi@example.com",
-    status: "suspended",
-    accountType: "Premium",
-    joinDate: "2023-04-01",
-    lastLogin: "2023-04-20",
-  },
-  {
-    id: "6",
-    name: "Amina Belhaj",
-    email: "amina.belhaj@example.com",
-    status: "active",
-    accountType: "Standard",
-    joinDate: "2023-04-10",
-    lastLogin: "2023-05-08",
-  },
-  {
-    id: "7",
-    name: "Youssef Msakni",
-    email: "youssef.msakni@example.com",
-    status: "active",
-    accountType: "Premium",
-    joinDate: "2023-04-15",
-    lastLogin: "2023-05-09",
-  },
-  {
-    id: "8",
-    name: "Fatma Riahi",
-    email: "fatma.riahi@example.com",
-    status: "inactive",
-    accountType: "Standard",
-    joinDate: "2023-04-20",
-    lastLogin: "2023-05-01",
-  },
-]
+interface User {
+  id: string
+  name: string
+  email: string
+  status: 'active' | 'inactive' | 'suspended'
+  accountType: 'Premium' | 'Standard'
+  joinDate: string
+  lastLogin: string
+}
 
 export default function UserManagement() {
-  const [users, setUsers] = useState(initialUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  // Fetch users from backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/authroutes/users')
+        const data = await response.json()
+        console.log("Fetched users:", data)
+        if (data.success) {
+          setUsers(data.users)
+          setFilteredUsers(data.users)
+        } else {
+          console.error("Failed to fetch users:", data.message)
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
+  // Filter users based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredUsers(users)
+    } else {
+      const filtered = users.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredUsers(filtered)
+    }
+  }, [searchTerm, users])
 
   const handleDeleteUser = (userId: string) => {
     setUserToDelete(userId)
     setDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (userToDelete) {
-      setUsers(users.filter((user) => user.id !== userToDelete))
-      setDeleteDialogOpen(false)
-      setUserToDelete(null)
+      try {
+        const response = await fetch(`http://localhost:5000/api/authroutes/users/${userToDelete}`, {
+          method: 'DELETE'
+        })
+        const data = await response.json()
+        
+        if (data.success) {
+          setUsers(users.filter((user) => user.id !== userToDelete))
+          setDeleteDialogOpen(false)
+          setUserToDelete(null)
+          
+        } else {
+          console.error("Failed to delete user:", data.message)
+        }
+      } catch (error) {
+        console.error("Error deleting user:", error)
+      }
     }
+  }
+
+  const toggleUserStatus = async (userId: string, currentStatus: 'active' | 'inactive' | 'suspended') => {
+    const action = currentStatus === 'active' ? 'block' : 'unblock'
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/authroutes/users/${userId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        setUsers(users.map(user => 
+          user.id === userId 
+            ? { 
+                ...user, 
+                status: action === 'block' ? 'inactive' : 'active',
+                lastLogin: action === 'block' ? user.lastLogin : new Date().toISOString().split('T')[0]
+              } 
+            : user
+        ))
+        console.log(`User ${action}ed successfully`)
+      } else {
+        console.error(`Failed to ${action} user:`, data.message)
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing user:`, error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
@@ -150,10 +169,6 @@ export default function UserManagement() {
             <span className="sr-only">Filter</span>
           </Button>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
       </div>
 
       <Card>
@@ -174,56 +189,76 @@ export default function UserManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage
-                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`}
-                          alt={user.name}
-                        />
-                        <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`}
+                            alt={user.name}
+                          />
+                          <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "active" ? "default" : user.status === "inactive" ? "secondary" : "destructive"
-                      }
-                    >
-                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{user.accountType}</TableCell>
-                  <TableCell className="hidden md:table-cell">{user.joinDate}</TableCell>
-                  <TableCell className="hidden md:table-cell">{user.lastLogin}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>View details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit user</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteUser(user.id)}>
-                          Delete user
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          user.status === "active" 
+                            ? "default" 
+                            : user.status === "inactive" 
+                              ? "secondary" 
+                              : "destructive"
+                        }
+                      >
+                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{user.accountType}</TableCell>
+                    <TableCell className="hidden md:table-cell">{user.joinDate}</TableCell>
+                    <TableCell className="hidden md:table-cell">{user.lastLogin || "Never"}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>View details</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className={user.status === "active" ? "text-destructive" : "text-green-600"}
+                            onClick={() => toggleUserStatus(user.id, user.status)}
+                          >
+                            {user.status === "active" ? "Block user" : "Unblock user"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive" 
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            Delete user
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    {searchTerm ? "No users match your search" : "No users found"}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
